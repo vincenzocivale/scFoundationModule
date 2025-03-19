@@ -79,27 +79,30 @@ def save_adata_h5ad(adata,out_path='None',shrink_to_sparse=False):
         adata.write_h5ad(out_path)
     print('Current data saved')
 
-def read_adata_h5ad(h5ad_path='None',expand_from_sparse=False):
+def read_adata_h5ad(h5ad_path='None', expand_from_sparse=False, N=None):
     """
-    read exist adata h5ad file
-    :param h5ad_path: path of h5ad file
-    :return: adata object
+    Legge un file h5ad e opzionalmente seleziona solo le prime N righe.
+    
+    :param h5ad_path: Percorso del file h5ad.
+    :param expand_from_sparse: Se True, converte da sparse a array denso.
+    :param N: Numero di righe da selezionare (None per caricare tutto).
+    :return: Oggetto adata ridotto con le prime N righe (se specificato).
     """
+    
+    adata = sc.read_h5ad(h5ad_path)
+
+    if N is not None:
+        adata = adata[:N].copy()  # Prendi solo le prime N righe
+
     if expand_from_sparse:
-        # recover full matrix from sparse matrix
-        adata = sc.read_h5ad(h5ad_path)
         if adata.raw is None:
-            # convert adata X only
-            adata.X = sparse.csr_matrix.toarray(adata.X)  
+            adata.X = adata.X.toarray() if sparse.issparse(adata.X) else adata.X
         else:
-            # convert adata X
-            adata.X = sparse.csr_matrix.toarray(adata.X)  
-            # convert adata.raw X
-            adata_raw_tmp=adata.raw.to_adata()
-            adata_raw_tmp.X=sparse.csr_matrix.toarray(adata_raw_tmp.X)
-            adata.raw=adata_raw_tmp
-    else:
-        adata = sc.read_h5ad(h5ad_path)
+            adata.X = adata.X.toarray() if sparse.issparse(adata.X) else adata.X
+            adata_raw_tmp = adata.raw.to_adata()
+            adata_raw_tmp.X = adata_raw_tmp.X.toarray() if sparse.issparse(adata_raw_tmp.X) else adata_raw_tmp.X
+            adata.raw = adata_raw_tmp
+
     return adata
 
 def main_gene_selection(X_df, gene_list):
@@ -125,3 +128,23 @@ def main_gene_selection(X_df, gene_list):
     var = pd.DataFrame(index=X_df.columns)
     var['mask'] = [1 if i in to_fill_columns else 0 for i in list(var.index)]
     return X_df, to_fill_columns,var
+
+def main():
+    data_path = r"D:\Repositories\scFoundationModule-main\data\raw\data_yuto.h5ad"
+    N=100000
+    save_path = r'D:\Repositories\scFoundationModule-main\data\interim\data_yuto.h5ad'
+
+    adata = read_adata_h5ad(data_path, N=N)
+
+    gene_list_df = pd.read_csv(r'D:\Repositories\scFoundationModule-main\preprocessing\OS_scRNA_gene_index.19264.tsv', header=0, delimiter='\t')
+    gene_list = list(gene_list_df['gene_name'])
+
+    X_df= pd.DataFrame(sparse.csr_matrix.toarray(adata.X),index=adata.obs.index.tolist(),columns=adata.var.index.tolist())
+    X_df, to_fill_columns, var = main_gene_selection(X_df, gene_list)
+    adata_uni = sc.AnnData(X_df)  
+    adata_uni = BasicFilter(adata_uni,qc_min_genes=200,qc_min_cells=0) # filter cell and gene by lower limit
+    
+    save_adata_h5ad(adata_uni,save_path)
+
+if __name__=='__main__':
+    main()
