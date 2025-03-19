@@ -20,7 +20,7 @@ parser.add_argument('--output_type', type=str, default='cell',choices=['cell','g
 parser.add_argument('--pool_type', type=str, default='all',choices=['all','max'], help='pooling type of cell embedding; default: all only valid for output_type=cell')
 parser.add_argument('--tgthighres', type=str, default='t4', help='the targeted high resolution (start with t) or the fold change of the high resolution (start with f), or the addtion (start with a) of the high resoultion. only valid for input_type=singlecell')
 parser.add_argument('--data_path', type=str, default='D:\Repositories\scFoundationModule-main\data\interim\data_yuto.h5ad', help='input data path')
-parser.add_argument('--save_path', type=str, default='D:\Repositories\scFoundationModule-main\data\interim\data_yuto.h5ad', help='save path')
+parser.add_argument('--save_path', type=str, default='D:\Repositories\scFoundationModule-main\data\interim', help='save path')
 parser.add_argument('--pre_normalized', type=str, default='F',choices=['F','T','A'], help='if normalized before input; default: False (F). choice: True(T), Append(A) When input_type=bulk: pre_normalized=T means log10(sum of gene expression). pre_normalized=F means sum of gene expression without normalization. When input_type=singlecell: pre_normalized=T or F means gene expression is already normalized+log1p or not. pre_normalized=A means gene expression is normalized and log1p transformed. the total count is appended to the end of the gene expression matrix.')
 parser.add_argument('--demo', action='store_true', default=False, help='if demo, only infer 10 samples')
 parser.add_argument('--version',  type=str, default='ce', help='only valid for output_type=cell. For read depth enhancemnet, version=rde For others, version=ce')
